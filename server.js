@@ -4,7 +4,7 @@ const mysql = require('mysql2/promise');
 require('dotenv').config();
 const port = 3000;
 
-//database config info
+// database config info
 const dbConfig = {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -16,17 +16,19 @@ const dbConfig = {
     queueLimit: 0,
 };
 
-//intialize Express app
+// initialize Express app
 const app = express();
-//helps app to read JSON
+// helps app to read JSON
 app.use(express.json());
 
-//start the server
+// start the server
 app.listen(port, () => {
     console.log('Server running on port', port);
 });
 
-// Example Route: Get all cards
+// -------------------- ROUTES --------------------
+
+// Get all cards
 app.get('/allcards', async (req, res) => {
     try {
         let connection = await mysql.createConnection(dbConfig);
@@ -38,15 +40,71 @@ app.get('/allcards', async (req, res) => {
     }
 });
 
-// Example Route: Create a new card
+// Create a new card
 app.post('/addcard', async (req, res) => {
     const { card_name, card_pic } = req.body;
+
     try {
         let connection = await mysql.createConnection(dbConfig);
-        await connection.execute('INSERT INTO cards (card_name, card_pic) VALUES (?, ?)', [card_name, card_pic]);
-        res.status(201).json({ message: 'Card '+card_name+' added successfully' });
+        await connection.execute(
+            'INSERT INTO defaultdb.cards (card_name, card_pic) VALUES (?, ?)',
+            [card_name, card_pic]
+        );
+        res.status(201).json({ message: 'Card ' + card_name + ' added successfully' });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Server error - could not add card '+card_name });
+        res.status(500).json({ message: 'Server error - could not add card ' + card_name });
+    }
+});
+
+// Edit (update) a card
+app.put('/editcard/:id', async (req, res) => {
+    const { id } = req.params;
+    const { card_name, card_pic } = req.body;
+
+    if (card_name === undefined && card_pic === undefined) {
+        return res.status(400).json({ message: 'Nothing to update' });
+    }
+
+    try {
+        let connection = await mysql.createConnection(dbConfig);
+        const [result] = await connection.execute(
+            `UPDATE defaultdb.cards 
+             SET card_name = COALESCE(?, card_name),
+                 card_pic = COALESCE(?, card_pic)
+             WHERE id = ?`,
+            [card_name ?? null, card_pic ?? null, id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Card not found' });
+        }
+
+        res.json({ message: 'Card id ' + id + ' updated successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error - could not update card id ' + id });
+    }
+});
+
+// Delete a card
+app.delete('/deletecard/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        let connection = await mysql.createConnection(dbConfig);
+        const [result] = await connection.execute(
+            'DELETE FROM defaultdb.cards WHERE id = ?',
+            [id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Card not found' });
+        }
+
+        res.json({ message: 'Card id ' + id + ' deleted successfully' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error - could not delete card id ' + id });
     }
 });
