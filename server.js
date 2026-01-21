@@ -29,7 +29,7 @@ app.listen(port, () => {
 });
 
 // Get all cards
-app.get('/allcards', async (req, res) => {
+app.get('/card', async (req, res) => {
     try {
         let connection = await mysql.createConnection(dbConfig);
         const [rows] = await connection.execute('SELECT * FROM defaultdb.cards');
@@ -41,7 +41,7 @@ app.get('/allcards', async (req, res) => {
 });
 
 // Create a new card
-app.post('/addcard', async (req, res) => {
+app.post('/card', async (req, res) => {
     const { card_name, card_pic } = req.body;
     try {
         let connection = await mysql.createConnection(dbConfig);
@@ -55,7 +55,7 @@ app.post('/addcard', async (req, res) => {
 
 
 // Get 1 card by ID
-app.get('/allcards/:id', async (req, res) => {
+app.get('/card/:id', async (req, res) => {
     const { id } = req.params;
     try {
         let connection = await mysql.createConnection(dbConfig);
@@ -69,7 +69,7 @@ app.get('/allcards/:id', async (req, res) => {
 
 
 // Edit (update) a card
-app.put('/editcard/:id', async (req, res) => {
+app.put('/card/:id', async (req, res) => {
     const { id } = req.params;
     const { card_name, card_pic } = req.body;
 
@@ -99,7 +99,7 @@ app.put('/editcard/:id', async (req, res) => {
 });
 
 // Delete a card
-app.delete('/deletecard/:id', async (req, res) => {
+app.delete('/card/:id', async (req, res) => {
     const { id } = req.params;
 
     try {
