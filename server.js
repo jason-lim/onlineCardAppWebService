@@ -13,9 +13,12 @@ const dbConfig = {
     database: process.env.DB_NAME,
     port: process.env.DB_PORT,
     waitForConnections: true,
-    connectionLimit: 100,
+    connectionLimit: 5,
     queueLimit: 0,
 };
+
+// Create ONE pool for the whole app
+const pool = mysql.createPool(dbConfig);
 
 //intialize Express app
 const app = express();
@@ -28,11 +31,11 @@ app.listen(port, () => {
     console.log('Server running on port', port);
 });
 
-// Get all cards
+// Get all cards (using the pool)
 app.get('/card', async (req, res) => {
     try {
-        let connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute(`SELECT * FROM ${dbConfig.database}.cards`);
+        // pool.query auto-acquires + releases a connection
+        const [rows] = await pool.query(`SELECT * FROM ${dbConfig.database}.cards`);
         res.json(rows);
     } catch (err) {
         console.error(err);
@@ -43,9 +46,8 @@ app.get('/card', async (req, res) => {
 // Create a new card
 app.post('/card', async (req, res) => {
     const { card_name, card_pic } = req.body;
-    try {
-        let connection = await mysql.createConnection(dbConfig);
-        await connection.execute(`INSERT INTO ${dbConfig.database}.cards (card_name, card_pic) VALUES (?, ?)`, [card_name, card_pic]);
+    try {        
+        await pool.execute(`INSERT INTO ${dbConfig.database}.cards (card_name, card_pic) VALUES (?, ?)`, [card_name, card_pic]);
         res.status(201).json({ message: 'Card '+card_name+' added successfully' });
     } catch (err) {
         console.error(err);
@@ -57,9 +59,8 @@ app.post('/card', async (req, res) => {
 // Get 1 card by ID
 app.get('/card/:id', async (req, res) => {
     const { id } = req.params;
-    try {
-        let connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute(`SELECT * FROM ${dbConfig.database}.cards where id = ?`, [id]);
+    try {        
+        const [rows] = await pool.execute(`SELECT * FROM ${dbConfig.database}.cards where id = ?`, [id]);
         res.json(rows);
     } catch (err) {
         console.error(err);
@@ -77,9 +78,8 @@ app.put('/card/:id', async (req, res) => {
         return res.status(400).json({ message: 'Nothing to update' });
     }
 
-    try {
-        let connection = await mysql.createConnection(dbConfig);
-        const [result] = await connection.execute(
+    try {        
+        const [result] = await pool.execute(
             `UPDATE ${dbConfig.database}.cards 
              SET card_name = COALESCE(?, card_name),
                  card_pic = COALESCE(?, card_pic)
@@ -102,9 +102,8 @@ app.put('/card/:id', async (req, res) => {
 app.delete('/card/:id', async (req, res) => {
     const { id } = req.params;
 
-    try {
-        let connection = await mysql.createConnection(dbConfig);
-        const [result] = await connection.execute(
+    try {        
+        const [result] = await pool.execute(
             `DELETE FROM ${dbConfig.database}.cards WHERE id = ?`,
             [id]
         );
@@ -120,4 +119,5 @@ app.delete('/card/:id', async (req, res) => {
     }
 
 });
+
 
