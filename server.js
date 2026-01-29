@@ -35,7 +35,7 @@ app.listen(port, () => {
 app.get('/card', async (req, res) => {
     try {
         // pool.query auto-acquires + releases a connection
-        const [rows] = await pool.query(`SELECT * FROM ${dbConfig.database}.cards`);
+        const [rows] = await pool.query(`SELECT * FROM cards`);
         res.json(rows);
     } catch (err) {
         console.error(err);
@@ -47,7 +47,7 @@ app.get('/card', async (req, res) => {
 app.post('/card', async (req, res) => {
     const { card_name, card_pic } = req.body;
     try {        
-        await pool.execute(`INSERT INTO ${dbConfig.database}.cards (card_name, card_pic) VALUES (?, ?)`, [card_name, card_pic]);
+        await pool.execute(`INSERT INTO cards (card_name, card_pic) VALUES (?, ?)`, [card_name, card_pic]);
         res.status(201).json({ message: 'Card '+card_name+' added successfully' });
     } catch (err) {
         console.error(err);
@@ -60,7 +60,7 @@ app.post('/card', async (req, res) => {
 app.get('/card/:id', async (req, res) => {
     const { id } = req.params;
     try {        
-        const [rows] = await pool.execute(`SELECT * FROM ${dbConfig.database}.cards where id = ?`, [id]);
+        const [rows] = await pool.execute(`SELECT * FROM cards where id = ?`, [id]);
         res.json(rows);
     } catch (err) {
         console.error(err);
@@ -80,7 +80,7 @@ app.put('/card/:id', async (req, res) => {
 
     try {        
         const [result] = await pool.execute(
-            `UPDATE ${dbConfig.database}.cards 
+            `UPDATE cards 
              SET card_name = COALESCE(?, card_name),
                  card_pic = COALESCE(?, card_pic)
              WHERE id = ?`,
@@ -104,7 +104,7 @@ app.delete('/card/:id', async (req, res) => {
 
     try {        
         const [result] = await pool.execute(
-            `DELETE FROM ${dbConfig.database}.cards WHERE id = ?`,
+            `DELETE FROM cards WHERE id = ?`,
             [id]
         );
 
@@ -119,5 +119,6 @@ app.delete('/card/:id', async (req, res) => {
     }
 
 });
+
 
 
