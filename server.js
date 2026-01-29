@@ -39,7 +39,7 @@ app.get('/card', async (req, res) => {
         res.json(rows);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Server error for allcards' });
+        res.status(500).json({ message: 'Server error for /card' });
     }
 });
 
@@ -51,7 +51,7 @@ app.post('/card', async (req, res) => {
         res.status(201).json({ message: 'Card '+card_name+' added successfully' });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Server error - could not add card '+card_name });
+        res.status(500).json({ message: 'Server error - could not add card '+ card_name });
     }
 });
 
@@ -61,10 +61,14 @@ app.get('/card/:id', async (req, res) => {
     const { id } = req.params;
     try {        
         const [rows] = await pool.execute(`SELECT * FROM cards where id = ?`, [id]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Card not found' });
+        }
         res.json(rows);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Server error for allcards' });
+        res.status(500).json({ message: 'Server error for /card/:id' });
     }
 });
 
@@ -119,6 +123,7 @@ app.delete('/card/:id', async (req, res) => {
     }
 
 });
+
 
 
 
